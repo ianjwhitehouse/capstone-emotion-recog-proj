@@ -36,7 +36,7 @@ class DataAgg:
 			return self.events[i][1] # stuff stored in self.events must be already ImageTk
 		else:
 			img = Image.fromarray(np.zeros((512, 288, 3)).astype(np.uint8)).resize((512, 288))
-			img = ImageTk.PhotoImage(image=img)
+			return ImageTk.PhotoImage(image=img)
 
 	def get_event_emo(self, i, emo_i):
 		if len(self.events) > i:
@@ -52,6 +52,7 @@ class DataAgg:
 			return 0
 
 	def get_graph(self, live=True, cur_event=0):
+		print("graph")
 		plt.close()
 		fig, ax1 = plt.subplots(figsize=(7, 2.6))
 
@@ -89,7 +90,7 @@ class DataAgg:
 
 		plt.tight_layout()
 
-
+		print("graph 2")
 		buf = io.BytesIO()
 		fig.savefig(buf, format='png')
 		buf.seek(0)

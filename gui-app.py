@@ -17,6 +17,7 @@ root.geometry(alignstr)
 root.resizable(width=False, height=False)
 
 def generate_window(live_mode=True, draw_event=0):
+	print("window")
 	for widget in root.winfo_children():
 		widget.destroy()
 
@@ -164,6 +165,7 @@ def generate_window(live_mode=True, draw_event=0):
 		# Put image into frame
 		graph_placement.photo_image = img
 		graph_placement.configure(image=img)
+	print("done gening")
 
 
 # Run app
