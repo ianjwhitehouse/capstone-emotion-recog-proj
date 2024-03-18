@@ -1,0 +1,55 @@
+<mxfile host="app.diagrams.net" modified="2024-03-16T22:23:13.711Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36" etag="FCLeaqzNMQp5Gfwqoli-" version="24.0.7" type="device">
+  <diagram name="Page-1" id="tdk1dpl3DZ5c38FfweER">
+    <mxGraphModel dx="765" dy="384" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="850" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="J8wAJ-uSgcQp6MAGWAAl-1" value="" style="whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="10" y="10" width="720" height="540" as="geometry" />
+        </mxCell>
+        <mxCell id="J8wAJ-uSgcQp6MAGWAAl-2" value="" style="whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="114" y="20" width="512" height="288" as="geometry" />
+        </mxCell>
+        <mxCell id="J8wAJ-uSgcQp6MAGWAAl-3" value="" style="whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="20" y="380" width="700" height="160" as="geometry" />
+        </mxCell>
+        <mxCell id="J8wAJ-uSgcQp6MAGWAAl-4" value="Graph of Current Emotions" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="290" y="400" width="160" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="J8wAJ-uSgcQp6MAGWAAl-5" value="Picture of user" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="290" y="120" width="160" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="J8wAJ-uSgcQp6MAGWAAl-8" value="" style="whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="20" y="320" width="700" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="J8wAJ-uSgcQp6MAGWAAl-9" value="Current Emotions and Stop Recording button OR Start Recording Button" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="170" y="277" width="420" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="J8wAJ-uSgcQp6MAGWAAl-10" value="" style="whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="745" y="10" width="720" height="540" as="geometry" />
+        </mxCell>
+        <mxCell id="J8wAJ-uSgcQp6MAGWAAl-11" value="" style="whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="849" y="20" width="512" height="288" as="geometry" />
+        </mxCell>
+        <mxCell id="J8wAJ-uSgcQp6MAGWAAl-12" value="" style="whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="755" y="380" width="700" height="160" as="geometry" />
+        </mxCell>
+        <mxCell id="J8wAJ-uSgcQp6MAGWAAl-13" value="Graph of Emotions during Last Recording with Dramatic Changes Highlighted" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="1025" y="400" width="160" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="J8wAJ-uSgcQp6MAGWAAl-14" value="Screenshot" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="1025" y="120" width="160" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="J8wAJ-uSgcQp6MAGWAAl-15" value="" style="whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="755" y="320" width="700" height="53" as="geometry" />
+        </mxCell>
+        <mxCell id="J8wAJ-uSgcQp6MAGWAAl-17" value="Emotions at period of dramatic change with buttons to move forward or backwards" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="1012.5" y="291.5" width="185" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="J8wAJ-uSgcQp6MAGWAAl-19" value="" style="whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="20" y="349" width="700" height="24" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
