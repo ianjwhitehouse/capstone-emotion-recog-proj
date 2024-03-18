@@ -17,6 +17,7 @@ root.geometry(alignstr)
 root.resizable(width=False, height=False)
 
 def generate_window(live_mode=True, draw_event=0):
+	print(draw_event)
 	print("window")
 	for widget in root.winfo_children():
 		widget.destroy()
@@ -85,9 +86,7 @@ def generate_window(live_mode=True, draw_event=0):
 		emo = data_agg.get_emotion(label_index)
 
 		# Put image into frame
-		txt = "%s: %s |" % (label_name, ["No Dect.  ", "Weak Dect.", "Dect.     ", "Str. Dect."][emo])
-		if i == 6:
-			txt = txt[:-2]
+		txt = "%s: %s" % (label_name, ["No Dect.  ", "Weak Dect.", "Dect.     ", "Str. Dect."][emo])
 		label_element.text = txt
 		label_element.configure(text=txt)
 
@@ -104,12 +103,10 @@ def generate_window(live_mode=True, draw_event=0):
 			emo = data_agg.get_event_emo(draw_event, i + 1)
 
 			# Put image into frame
-			txt = "%s: %s |" % (
+			txt = "%s: %s" % (
 				["Happiness", "Sadness", "Anger", "Fear", "Disgust", "Suprise"][i],
 				["Not Dect.   ", "Weak Dect.  ", "Detected    ", "Strong Dect."][emo]
 			)
-			if i == 6:
-				txt = txt[:-2]
 
 			emo_label.text = txt
 			emo_label.configure(text=txt)
@@ -136,7 +133,7 @@ def generate_window(live_mode=True, draw_event=0):
 
 		button = Button(
 			sent_frame, text="Next Event", relief=RAISED, borderwidth=1,
-			command=lambda: generate_window(live_mode=False, draw_event=max(draw_event + 1, len(data_agg.events)))
+			command=lambda: generate_window(live_mode=False, draw_event=min(draw_event + 1, len(data_agg.events) - 1))
 		)
 		button.pack(side=RIGHT, padx=11, fill=NONE, expand=False)
 
