@@ -1,9 +1,9 @@
-from tkinter import Tk, Frame, Label, Button
+from customtkinter import CTk, CTkFrame, CTkLabel, CTkButton
 from tkinter import NONE, BOTH, X, TOP, BOTTOM, LEFT, RIGHT, RAISED
 from data_agg import DataAgg
 
 # Start tkinter
-root = Tk()
+root = CTk()
 root.title("Emotion Manager")
 
 # Start data agg
@@ -23,9 +23,9 @@ def generate_window(live_mode=True, draw_event=0):
 		widget.destroy()
 
 	# Add camera frame
-	camera_frame = Frame(root, width=514, height=290, relief=RAISED, borderwidth=1)
-	camera_frame.pack(side=TOP, padx=11, pady=11, fill=NONE, expand=False)
-	camera_placement = Label(camera_frame, width=512, height=288)
+	camera_frame = CTkFrame(master=root, width=514, height=290) # , relief=RAISED, borderwidth=1)
+	camera_frame.pack(side=TOP, padx=12, pady=6, fill=NONE, expand=False)
+	camera_placement = CTkLabel(master=camera_frame, width=512, height=288, text="")
 	camera_placement.pack(fill=NONE, expand=False)
 
 	# Method to draw new frames
@@ -49,63 +49,71 @@ def generate_window(live_mode=True, draw_event=0):
 		camera_placement.configure(image=img)
 
 	# Add current emotion frame
-	sent_frame = Frame(root, height=24, relief=RAISED, borderwidth=1)
-	sent_frame.pack(side=BOTTOM, padx=11, pady=2, fill=X, expand=False)
+	sent_frame = CTkFrame(master=root, height=24) # , relief=RAISED, borderwidth=1)
+	sent_frame.pack(side=BOTTOM, padx=12, pady=6, fill=X, expand=False)
 
-	sentiment_text = Label(sent_frame)
-	sentiment_text.pack(side=LEFT, fill=X, expand=False)
+	sentiment_text = CTkLabel(master=sent_frame)
+	sentiment_text.pack(side=LEFT, fill=X, padx=6, expand=False)
 
 	# Function to draw sentiment
 	def update_sent_text():
 		sent = data_agg.get_emotion(0)
 
 		# Put image into frame
-		txt = "Overall: %s" % ["Very Poor", "Poor", "Below Average", "Average", "Above Average", "Good", "Very Good"][sent + 3]
+		txt = "Overall sentiment: %s" % ["Very Poor", "Poor", "Below Average", "Average", "Above Average", "Good", "Very Good"][sent + 3]
 		sentiment_text.text = txt
 		sentiment_text.configure(text=txt)
 
 		# Repeat
-		sentiment_text.after(1, update_sent_text)
+		sentiment_text.after(1000, update_sent_text)
 
 	if live_mode:
 		update_sent_text()
 	else:
-		sent = data_agg.get_event_emo(draw_event, 0)
-
-		# Put image into frame
-		txt = "Overall: %s" % ["Very Poor", "Poor", "Below Average", "Average", "Above Average", "Good", "Very Good"][sent + 3]
+		# sent = data_agg.get_event_emo(draw_event, 0)
+		#
+		# # Put image into frame
+		# txt = "Overall: %s" % ["Very Poor", "Poor", "Below Average", "Average", "Above Average", "Good", "Very Good"][sent + 3]
+		
+		txt = data_agg.get_event_text(draw_event)
+		
 		sentiment_text.text = txt
 		sentiment_text.configure(text=txt)
 
 	# Add other emotions
-	current_emo_frame = Frame(root, height=24, relief=RAISED, borderwidth=1)
-	current_emo_frame.pack(side=BOTTOM, padx=11, pady=2, fill=X, expand=False)
+	current_emo_frame = CTkFrame(master=root, height=24) # , relief=RAISED, borderwidth=1)
+	current_emo_frame.pack(side=BOTTOM, padx=12, pady=6, fill=X, expand=False)
+
+	emo_labels = ["Happiness", "Sadness", "Anger", "Fear", "Disgust", "Suprise"]
 
 	# Function to draw emotions
 	def update_emo_label(label_element, label_name, label_index):
 		emo = data_agg.get_emotion(label_index)
 
 		# Put image into frame
-		txt = "%s: %s" % (label_name, ["No Dect.  ", "Weak Dect.", "Dect.     ", "Str. Dect."][emo])
+		txt = "%s: %s" % (label_name, ["0", "1", "2", "3"][emo])
 		label_element.text = txt
 		label_element.configure(text=txt)
 
 		# Repeat
-		label_element.after(1, lambda : update_emo_label(label_element, label_name, label_index))
+		label_element.after(1000, lambda : update_emo_label(label_element, label_name, label_index))
 
 	# Add all emotion labels
 	for i in range(6):
-		emo_label = Label(current_emo_frame)
-		emo_label.pack(side=LEFT, fill=X, expand=False)
+		emo_label = CTkLabel(master=current_emo_frame, anchor="w")
+		emo_label.pack(side=LEFT, fill=NONE, expand=False, padx=6)
+		if i < 5:
+			emo_sep = CTkLabel(master=current_emo_frame, text="|")
+			emo_sep.pack(side=LEFT, fill=NONE, expand=False)
 		if live_mode:
-			update_emo_label(emo_label, ["Happiness", "Sadness", "Anger", "Fear", "Disgust", "Suprise"][i], i+1)
+			update_emo_label(emo_label, emo_labels[i], i+1)
 		else:
 			emo = data_agg.get_event_emo(draw_event, i + 1)
 
 			# Put image into frame
 			txt = "%s: %s" % (
-				["Happiness", "Sadness", "Anger", "Fear", "Disgust", "Suprise"][i],
-				["Not Dect.   ", "Weak Dect.  ", "Detected    ", "Strong Dect."][emo]
+				emo_labels[i],
+				["0", "1", "2", "3"][emo]
 			)
 
 			emo_label.text = txt
@@ -113,34 +121,35 @@ def generate_window(live_mode=True, draw_event=0):
 
 	# Add button
 	if live_mode:
-		button = Button(
-			sent_frame, text="Stop Recording", relief=RAISED, borderwidth=1,
+		button = CTkButton(
+			master=sent_frame, text="Stop Recording", width=120, # relief=RAISED, borderwidth=1,
 			command=lambda : generate_window(live_mode=False, draw_event=0)
 		)
-		button.pack(side=RIGHT, padx=11, fill=NONE, expand=False)
+		button.pack(side=RIGHT, padx=6, fill=NONE, expand=False)
 	else:
-		button = Button(
-			sent_frame, text="Start Recording", relief=RAISED, borderwidth=1,
+		button = CTkButton(
+			master=sent_frame, text="Start Recording", width=120, # relief=RAISED, borderwidth=1,
 			command=lambda: generate_window(live_mode=True)
 		)
-		button.pack(side=RIGHT, padx=11, fill=NONE, expand=False)
+		button.pack(side=RIGHT, padx=6, fill=NONE, expand=False)
 
-		button = Button(
-			sent_frame, text="Prev. Event", relief=RAISED, borderwidth=1,
-			command=lambda: generate_window(live_mode=False, draw_event=max(draw_event - 1, 0))
-		)
-		button.pack(side=RIGHT, padx=11, fill=NONE, expand=False)
+		if len(data_agg.events) > 0:
+			button = CTkButton(
+				master=sent_frame, text="Prev. Event", width=36, # relief=RAISED, borderwidth=1,
+				command=lambda: generate_window(live_mode=False, draw_event=max(draw_event - 1, 0))
+			)
+			button.pack(side=RIGHT, padx=6, fill=NONE, expand=False)
 
-		button = Button(
-			sent_frame, text="Next Event", relief=RAISED, borderwidth=1,
-			command=lambda: generate_window(live_mode=False, draw_event=min(draw_event + 1, len(data_agg.events) - 1))
-		)
-		button.pack(side=RIGHT, padx=11, fill=NONE, expand=False)
+			button = CTkButton(
+				master=sent_frame, text="Next Event", width=36, # relief=RAISED, borderwidth=1,
+				command=lambda: generate_window(live_mode=False, draw_event=min(draw_event + 1, len(data_agg.events) - 1))
+			)
+			button.pack(side=RIGHT, padx=6, fill=NONE, expand=False)
 
 	# Draw graph
-	graph_frame = Frame(root, width=702, height=262, relief=RAISED, borderwidth=1)
-	graph_frame.pack(side=BOTTOM, padx=11, pady=11, fill=NONE, expand=False)
-	graph_placement = Label(graph_frame, width=700, height=260)
+	graph_frame = CTkFrame(master=root, width=702, height=262) #, relief=RAISED, borderwidth=1)
+	graph_frame.pack(side=BOTTOM, padx=12, pady=6, fill=NONE, expand=False)
+	graph_placement = CTkLabel(master=graph_frame, width=700, height=260, text="")
 	graph_placement.pack(fill=NONE, expand=False)
 
 	# Method to draw new frames
