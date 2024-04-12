@@ -10,14 +10,11 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - name: Add Conda to System Path
-      run: |
-        # $CONDA is an environment variable pointing to the root of the miniconda directory
-        echo $CONDA/bin >> $GITHUB_PATH
-    - name: Install Dependencies using Conda
-      run: |
-        conda config --append channels https://repo.anaconda.com/pkgs/main
-        conda env update --file environment.yml --name base
+    - uses: conda-incubator/setup-miniconda@v3
+      with:
+        activate-environment: emo-cap
+        environment-file: environment.yml
+        auto-activate-base: false
     - name: Build with PyInstaller
       run: |
         pyinstaller --onefile --noconsole -n WorkMindfully.exe gui-app.py
