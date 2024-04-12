@@ -1,6 +1,6 @@
-name: Use PyInstaller to build exe file
+name: Use PyInstaller to Build Exe File and Send to GitHub Release
 
-on: [push]
+on: [pull_request]
 
 jobs:
   build-linux:
