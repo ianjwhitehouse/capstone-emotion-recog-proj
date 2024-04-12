@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import io
 import pyautogui
+from deepface import DeepFace
 
 
 class DataAgg:
@@ -15,21 +16,22 @@ class DataAgg:
 		self.events = [] # list of tuples of times and pictures
 
 	def start_ml(self,):
-		pass # init ml stuff here
+		pass
 
 	def run_ml_on_img(self, img):
-		# emo = self.model # Query model here
+		try:
+			emo = DeepFace.analyze(img, actions=["emotion"]) # img must be np array in BGR format
+			emo = emo[np.argmax([e["face_confidence"] for e in emo])]
+			emo = np.array([emo["emotion"][e] for e in [
+				"happy", "sad", "angry", "fear", "disgust", "suprise"
+			]])
+			emo = (np.exp(emo/25) - np.exp(-emo/25))/(np.exp(emo/25) + np.exp(-emo/25))
+			# Add sentiment (happiness - sadness)
+			emo = np.insert(emo, 0, emo[0] - emo[1])
+			emo *= 3
+		except ValueError:
+			emo = np.array([0, 0, 0, 0, 0, 0, 0])
 
-		# THIS CODE JUST RANDOMIZES EMOTIONS
-		emo = np.random.uniform(size=(7,))
-		emo = emo - 0.5
-		emo = emo * np.array([3, 2, 2, 2, 2, 2, 2])
-		print(emo)
-		if len(self.emotion_mem) > 0:
-			emo = emo + self.emotion_mem[-1]
-
-		# KEEP THIS CODE IT FLOORS/CEILS EVERYTHING
-		print(emo)
 		emo = np.round(emo).astype(int)
 		emo = np.minimum(emo, 3)
 		emo = np.maximum(emo, [-3, 0, 0, 0, 0, 0, 0])
@@ -76,11 +78,13 @@ class DataAgg:
 
 
 	def request_new_img(self,):
-		# _, frame = self.video_capture.read()
-		frame = cv2.imread("assets/test_img.jpg")
+		captured, frame = self.video_capture.read()
+		print(captured)
+		if not captured:
+			frame = cv2.imread("assets/no_camera.png")
 
+		self.run_ml_on_img(frame)
 		img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-		self.run_ml_on_img(img)
 
 		img = Image.fromarray(img).resize((512, 288))
 		img = ImageTk.PhotoImage(image=img)
@@ -165,3 +169,7 @@ class DataAgg:
 		img = ImageTk.PhotoImage(image=img)
 		buf.close()
 		return img
+
+
+if __name__ == "__main__":
+	da = DataAgg()
