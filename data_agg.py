@@ -14,22 +14,22 @@ class DataAgg:
 		self.video_capture = cv2.VideoCapture(0)
 		self.start_ml()
 		self.events = [] # list of tuples of times and pictures
-        
+
 	def start_ml(self,):
-		self.df = DeepFace()
+		pass
 
 	def run_ml_on_img(self, img):
-        emo = self.df.analyze(img, actions=["emotions"]) # img must be np array in BGR format
-        emo = emo[np.argmax([e["face_confidence"] for e in emo])]
-        emo = np.array([emo["emotion"][e] for e in [
-            "happy", "sad", "angry", "fear", "disgust", "suprise"
-        ]])
-        emo = (np.exp(emo/25) - np.exp(-emo/25))/(np.exp(emo/25) + np.exp(-emo/25))
-        # Add sentiment (happiness - sadness)
-        emo = np.insert(emo, 0, emo[0] - emo[1])
-        emo *= 3
+		emo = DeepFace.analyze(img, actions=["emotions"]) # img must be np array in BGR format
+		emo = emo[np.argmax([e["face_confidence"] for e in emo])]
+		emo = np.array([emo["emotion"][e] for e in [
+			"happy", "sad", "angry", "fear", "disgust", "suprise"
+		]])
+		emo = (np.exp(emo/25) - np.exp(-emo/25))/(np.exp(emo/25) + np.exp(-emo/25))
+		# Add sentiment (happiness - sadness)
+		emo = np.insert(emo, 0, emo[0] - emo[1])
+		emo *= 3
 
-        emo = np.round(emo).astype(int)
+		emo = np.round(emo).astype(int)
 		emo = np.minimum(emo, 3)
 		emo = np.maximum(emo, [-3, 0, 0, 0, 0, 0, 0])
 		print(emo)
@@ -79,7 +79,7 @@ class DataAgg:
 		# frame = cv2.imread("assets/test_img.jpg")
 
 		self.run_ml_on_img(img)
-        img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+		img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
 		img = Image.fromarray(img).resize((512, 288))
 		img = ImageTk.PhotoImage(image=img)
@@ -164,3 +164,7 @@ class DataAgg:
 		img = ImageTk.PhotoImage(image=img)
 		buf.close()
 		return img
+
+
+if __name__ == "__main__":
+	da = DataAgg()
