@@ -7,6 +7,10 @@ import pyautogui
 from deepface import DeepFace
 
 
+# Hardcoded settings
+SENSITIVITY = 5
+
+
 class DataAgg:
 	def __init__(self,):
 		# List to store past emotions
@@ -16,22 +20,25 @@ class DataAgg:
 		self.events = [] # list of tuples of times and pictures
 
 	def start_ml(self,):
-		pass
+		DeepFace.analyze("assets/test_img.jpg", actions=["emotion"], detector_backend="ssd")
 
 	def run_ml_on_img(self, img):
 		try:
-			emo = DeepFace.analyze(img, actions=["emotion"]) # img must be np array in BGR format
+			emo = DeepFace.analyze(img, actions=["emotion"], detector_backend="ssd") # img must be np array in BGR format
 			emo = emo[np.argmax([e["face_confidence"] for e in emo])]
+			print(emo["emotion"])
 			emo = np.array([emo["emotion"][e] for e in [
-				"happy", "sad", "angry", "fear", "disgust", "suprise"
+				"happy", "sad", "angry", "fear", "disgust", "surprise"
 			]])
-			emo = (np.exp(emo/25) - np.exp(-emo/25))/(np.exp(emo/25) + np.exp(-emo/25))
+			emo = (np.exp(emo/SENSITIVITY) - np.exp(-emo/SENSITIVITY))/(np.exp(emo/SENSITIVITY) + np.exp(-emo/SENSITIVITY))
+			print(emo)
 			# Add sentiment (happiness - sadness)
 			emo = np.insert(emo, 0, emo[0] - emo[1])
 			emo *= 3
 		except ValueError:
 			emo = np.array([0, 0, 0, 0, 0, 0, 0])
 
+		print(emo)
 		emo = np.round(emo).astype(int)
 		emo = np.minimum(emo, 3)
 		emo = np.maximum(emo, [-3, 0, 0, 0, 0, 0, 0])
@@ -45,7 +52,6 @@ class DataAgg:
 
 			previous_avg = np.stack([emos for emos in self.emotion_mem[-60:-30]])
 			previous_avg = np.mean(previous_avg, axis=0)
-			print("SHP", previous_avg.shape)
 
 			# Capture event if any emotion goes up signficantly or sentiment goes down
 			emo = None
@@ -54,22 +60,22 @@ class DataAgg:
 				bad = current_avg[0] < previous_avg[0]
 			elif np.abs(current_avg[1] - previous_avg[1]) > 1.5: # Happiness changed
 				emo = "Happiness"
-				bad = current_avg[0] < previous_avg[0]
+				bad = current_avg[1] < previous_avg[1]
 			elif np.abs(current_avg[2] - previous_avg[2]) > 1.5: # Sadness changed
 				emo = "Sadness"
-				bad = current_avg[0] > previous_avg[0]
+				bad = current_avg[2] > previous_avg[2]
 			elif np.abs(current_avg[3] - previous_avg[3]) > 1.5: # Anger changed
 				emo = "Anger"
-				bad = current_avg[0] > previous_avg[0]
+				bad = current_avg[3] > previous_avg[3]
 			elif np.abs(current_avg[4] - previous_avg[4]) > 1.5: # Fear changed
 				emo = "Fear"
-				bad = current_avg[0] > previous_avg[0]
+				bad = current_avg[4] > previous_avg[4]
 			elif np.abs(current_avg[5] - previous_avg[5]) > 1.5: # Disgust changed
 				emo = "Disgust"
-				bad = current_avg[0] > previous_avg[0]
+				bad = current_avg[5] > previous_avg[5]
 			elif np.abs(current_avg[6] - previous_avg[6]) > 1.5: # Suprise changed
 				emo = "Suprise"
-				bad = current_avg[0] > previous_avg[0]
+				bad = current_avg[5] > previous_avg[5]
 
 			if emo:
 				screenshot = pyautogui.screenshot().resize((512, 288))
@@ -79,7 +85,6 @@ class DataAgg:
 
 	def request_new_img(self,):
 		captured, frame = self.video_capture.read()
-		print(captured)
 		if not captured:
 			frame = cv2.imread("assets/no_camera.png")
 
@@ -161,7 +166,6 @@ class DataAgg:
 
 		plt.tight_layout()
 
-		print("graph 2")
 		buf = io.BytesIO()
 		fig.savefig(buf, format='png')
 		buf.seek(0)
