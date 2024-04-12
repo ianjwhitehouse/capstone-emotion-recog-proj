@@ -26,7 +26,7 @@ jobs:
       with:
         tag_name: ${{ github.ref }}
         release_name: Release ${{ github.ref }}
-        body: Fixed bugs to improve the user experience
+        body: github.event.release.body
         draft: true
     - name: Upload Release Asset
       id: upload-release-asset 
