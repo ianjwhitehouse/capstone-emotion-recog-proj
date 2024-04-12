@@ -4,7 +4,7 @@ from data_agg import DataAgg
 
 # Start tkinter
 root = CTk()
-root.title("Emotion Manager")
+root.title("WorkMindfully")
 
 # Start data agg
 data_agg = DataAgg()
