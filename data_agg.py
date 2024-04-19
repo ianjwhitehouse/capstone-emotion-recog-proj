@@ -8,8 +8,9 @@ from deepface import DeepFace
 
 
 # Hardcoded settings
-SENSITIVITY = 5
+SENSITIVITY = 10
 CAM_UPDATES_PER_SEC = 50
+MIN_FACE_CONFIDENCE = 0.3
 
 
 class DataAgg:
@@ -26,26 +27,29 @@ class DataAgg:
 		DeepFace.analyze("assets/test_img.jpg", actions=["emotion"], detector_backend="ssd")
 
 	def run_ml_on_img(self, img):
-		try:
-			emo = DeepFace.analyze(img, actions=["emotion"], detector_backend="ssd") # img must be np array in BGR format
-			emo = emo[np.argmax([e["face_confidence"] for e in emo])]
+		emo = DeepFace.analyze(img, actions=["emotion"], detector_backend="ssd", enforce_detection=False) # img must be np array in BGR format
+		emo = emo[np.argmax([e["face_confidence"] for e in emo])]
+		
+		if emo["face_confidence"] > MIN_FACE_CONFIDENCE:
 			print(emo["emotion"])
 			emo = np.array([emo["emotion"][e] for e in [
 				"happy", "sad", "angry", "fear", "disgust", "surprise"
 			]])
 			emo = (np.exp(emo/SENSITIVITY) - np.exp(-emo/SENSITIVITY))/(np.exp(emo/SENSITIVITY) + np.exp(-emo/SENSITIVITY))
-			print(emo)
+			
 			# Add sentiment (happiness - sadness)
 			emo = np.insert(emo, 0, emo[0] - emo[1])
 			emo *= 3
-		except ValueError:
+
+			# Define bounds of each emotion
+			emo = np.round(emo).astype(int)
+			emo = np.minimum(emo, 3)
+			emo = np.maximum(emo, [-3, 0, 0, 0, 0, 0, 0])
+			print(emo)
+
+		else:
 			emo = np.array([np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan])
 
-		print(emo)
-		emo = np.round(emo).astype(int)
-		emo = np.minimum(emo, 3)
-		emo = np.maximum(emo, [-3, 0, 0, 0, 0, 0, 0])
-		print(emo)
 		self.emotion_mem.append(emo)
 
 		# This is perminent event detection stuff

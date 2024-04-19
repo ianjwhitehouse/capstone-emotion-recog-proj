@@ -1,5 +1,6 @@
 from customtkinter import CTk, CTkFrame, CTkLabel, CTkButton
 from tkinter import NONE, BOTH, X, TOP, BOTTOM, LEFT, RIGHT, RAISED
+import numpy as np
 from data_agg import DataAgg
 
 # Start tkinter
@@ -59,8 +60,14 @@ def generate_window(live_mode=True, draw_event=0):
 	def update_sent_text():
 		sent = data_agg.get_emotion(0)
 
+		if np.isnan(sent):
+			sent = -1
+		else:
+			sent += 3
+		# print("SENT", sent)
+
 		# Put image into frame
-		txt = "Overall sentiment: %s" % ["Very Poor", "Poor", "Below Average", "Average", "Above Average", "Good", "Very Good"][sent + 3]
+		txt = "Overall sentiment: %s" % ["Very Poor", "Poor", "Below Average", "Average", "Above Average", "Good", "Very Good", "ND"][sent]
 		sentiment_text.text = txt
 		sentiment_text.configure(text=txt)
 
@@ -89,9 +96,13 @@ def generate_window(live_mode=True, draw_event=0):
 	# Function to draw emotions
 	def update_emo_label(label_element, label_name, label_index):
 		emo = data_agg.get_emotion(label_index)
+		
+		if np.isnan(emo):
+			emo = -1
+		# print("EMO", emo)
 
 		# Put image into frame
-		txt = "%s: %s" % (label_name, ["0", "1", "2", "3"][emo])
+		txt = "%s: %s" % (label_name, ["0 ", "1 ", "2 ", "3 ", "ND"][emo])
 		label_element.text = txt
 		label_element.configure(text=txt)
 
