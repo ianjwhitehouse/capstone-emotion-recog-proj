@@ -9,6 +9,7 @@ from deepface import DeepFace
 
 # Hardcoded settings
 SENSITIVITY = 5
+CAM_UPDATES_PER_SEC = 50
 
 
 class DataAgg:
@@ -17,7 +18,9 @@ class DataAgg:
 		self.emotion_mem = []
 		self.video_capture = cv2.VideoCapture(0)
 		self.start_ml()
-		self.events = [] # list of tuples of times and pictures
+		self.events = []	# list of tuples of times and pictures
+		self.times_cam_called = 0
+		self.cam_updates_per_second = CAM_UPDATES_PER_SEC
 
 	def start_ml(self,):
 		DeepFace.analyze("assets/test_img.jpg", actions=["emotion"], detector_backend="ssd")
@@ -36,7 +39,7 @@ class DataAgg:
 			emo = np.insert(emo, 0, emo[0] - emo[1])
 			emo *= 3
 		except ValueError:
-			emo = np.array([0, 0, 0, 0, 0, 0, 0])
+			emo = np.array([np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan])
 
 		print(emo)
 		emo = np.round(emo).astype(int)
@@ -88,7 +91,11 @@ class DataAgg:
 		if not captured:
 			frame = cv2.imread("assets/no_camera.png")
 
-		self.run_ml_on_img(frame)
+		
+		if self.times_cam_called % self.cam_updates_per_second == 0:
+			self.run_ml_on_img(frame)
+		self.times_cam_called += 1
+		
 		img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
 		img = Image.fromarray(img).resize((512, 288))

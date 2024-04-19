@@ -37,7 +37,7 @@ def generate_window(live_mode=True, draw_event=0):
 		camera_placement.configure(image=img)
 
 		# Repeat
-		camera_placement.after(1000, put_image_into_frame)
+		camera_placement.after(1000//data_agg.cam_updates_per_second, put_image_into_frame)
 
 	if live_mode:
 		put_image_into_frame()
