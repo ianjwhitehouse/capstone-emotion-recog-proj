@@ -1,5 +1,6 @@
 from customtkinter import CTk, CTkFrame, CTkLabel, CTkButton
 from tkinter import NONE, BOTH, X, TOP, BOTTOM, LEFT, RIGHT, RAISED
+import numpy as np
 from data_agg import DataAgg
 
 # Start tkinter
@@ -28,25 +29,34 @@ def generate_window(live_mode=True, draw_event=0):
 	camera_placement = CTkLabel(master=camera_frame, width=512, height=288, text="")
 	camera_placement.pack(fill=NONE, expand=False)
 
+	# Update label to set correct sizes
+	camera_placement.update()
+
 	# Method to draw new frames
 	def put_image_into_frame():
-		img = data_agg.request_new_img()
+		# Get a new image from the camera
+		img = data_agg.request_new_img(camera_placement.winfo_width(), camera_placement.winfo_height())
 
 		# Put image into frame
+		# print("CAMERA", camera_placement.winfo_height(), camera_placement.winfo_width(), img.width(), img.height())
 		camera_placement.photo_image=img
 		camera_placement.configure(image=img)
+		camera_placement.update()
 
 		# Repeat
-		camera_placement.after(1000, put_image_into_frame)
+		camera_placement.after(1000//data_agg.cam_updates_per_second, put_image_into_frame)
 
 	if live_mode:
 		put_image_into_frame()
+		
 	else:
-		img = data_agg.get_event_img(draw_event)
+		# Get a screenshot saved with the specific event
+		img = data_agg.get_event_img(draw_event, camera_placement.winfo_width(), camera_placement.winfo_height())
 
 		# Put image into frame
 		camera_placement.photo_image = img
 		camera_placement.configure(image=img)
+		camera_placement.update()
 
 	# Add current emotion frame
 	sent_frame = CTkFrame(master=root, height=24) # , relief=RAISED, borderwidth=1)
@@ -59,8 +69,14 @@ def generate_window(live_mode=True, draw_event=0):
 	def update_sent_text():
 		sent = data_agg.get_emotion(0)
 
+		if np.isnan(sent):
+			sent = -1
+		else:
+			sent += 3
+		# print("SENT", sent)
+
 		# Put image into frame
-		txt = "Overall sentiment: %s" % ["Very Poor", "Poor", "Below Average", "Average", "Above Average", "Good", "Very Good"][sent + 3]
+		txt = "Overall sentiment: %s" % ["Very Poor", "Poor", "Below Average", "Average", "Above Average", "Good", "Very Good", "ND"][sent]
 		sentiment_text.text = txt
 		sentiment_text.configure(text=txt)
 
@@ -89,9 +105,13 @@ def generate_window(live_mode=True, draw_event=0):
 	# Function to draw emotions
 	def update_emo_label(label_element, label_name, label_index):
 		emo = data_agg.get_emotion(label_index)
+		
+		if np.isnan(emo):
+			emo = -1
+		# print("EMO", emo)
 
 		# Put image into frame
-		txt = "%s: %s" % (label_name, ["0", "1", "2", "3"][emo])
+		txt = "%s: %s" % (label_name, ["0 ", "1 ", "2 ", "3 ", "ND"][emo])
 		label_element.text = txt
 		label_element.configure(text=txt)
 
@@ -122,27 +142,38 @@ def generate_window(live_mode=True, draw_event=0):
 	# Add button
 	if live_mode:
 		button = CTkButton(
-			master=sent_frame, text="Stop Recording", width=120, # relief=RAISED, borderwidth=1,
+			master=sent_frame, text="Stop Rec.", width=64, # relief=RAISED, borderwidth=1,
 			command=lambda : generate_window(live_mode=False, draw_event=0)
 		)
 		button.pack(side=RIGHT, padx=6, fill=NONE, expand=False)
 	else:
 		button = CTkButton(
-			master=sent_frame, text="Start Recording", width=120, # relief=RAISED, borderwidth=1,
+			master=sent_frame, text="Start Rec.", width=64, # relief=RAISED, borderwidth=1,
 			command=lambda: generate_window(live_mode=True)
 		)
 		button.pack(side=RIGHT, padx=6, fill=NONE, expand=False)
-
+			
+		button = CTkButton(
+			master=sent_frame, text="Load Rec.", width=64, # relief=RAISED, borderwidth=1,
+			command=None
+		)
+		button.pack(side=RIGHT, padx=6, fill=NONE, expand=False)
+		button = CTkButton(
+			master=sent_frame, text="Save Rec.", width=64, # relief=RAISED, borderwidth=1,
+			command=None
+		)
+		button.pack(side=RIGHT, padx=6, fill=NONE, expand=False)
+		
 		if len(data_agg.events) > 0:
 			button = CTkButton(
-				master=sent_frame, text="Prev. Event", width=36, # relief=RAISED, borderwidth=1,
-				command=lambda: generate_window(live_mode=False, draw_event=max(draw_event - 1, 0))
+				master=sent_frame, text="Next Event", width=64, # relief=RAISED, borderwidth=1,
+				command=lambda: generate_window(live_mode=False, draw_event=min(draw_event + 1, len(data_agg.events) - 1))
 			)
 			button.pack(side=RIGHT, padx=6, fill=NONE, expand=False)
-
+			
 			button = CTkButton(
-				master=sent_frame, text="Next Event", width=36, # relief=RAISED, borderwidth=1,
-				command=lambda: generate_window(live_mode=False, draw_event=min(draw_event + 1, len(data_agg.events) - 1))
+				master=sent_frame, text="Prev. Event", width=64, # relief=RAISED, borderwidth=1,
+				command=lambda: generate_window(live_mode=False, draw_event=max(draw_event - 1, 0))
 			)
 			button.pack(side=RIGHT, padx=6, fill=NONE, expand=False)
 
@@ -152,25 +183,33 @@ def generate_window(live_mode=True, draw_event=0):
 	graph_placement = CTkLabel(master=graph_frame, width=700, height=260, text="")
 	graph_placement.pack(fill=NONE, expand=False)
 
+	# Update label to set correct sizes
+	graph_placement.update()
+
 	# Method to draw new frames
 	def put_graph_into_frame():
-		img = data_agg.get_graph()
+		img = data_agg.get_graph(graph_placement.winfo_width(), graph_placement.winfo_height())
 
 		# Put image into frame
 		graph_placement.photo_image = img
 		graph_placement.configure(image=img)
+		graph_placement.update()
 
 		# Repeat
 		graph_placement.after(1000, put_graph_into_frame)
 
 	if live_mode:
 		put_graph_into_frame()
+		
 	else:
-		img = data_agg.get_graph(live=False, cur_event=draw_event)
+		print("GRAPH", graph_placement.winfo_width(), graph_placement.winfo_height())
+		img = data_agg.get_graph(graph_placement.winfo_width(), graph_placement.winfo_height(), live=False, cur_event=draw_event)
 
 		# Put image into frame
 		graph_placement.photo_image = img
 		graph_placement.configure(image=img)
+		graph_placement.update()
+	
 	print("done gening")
 
 
