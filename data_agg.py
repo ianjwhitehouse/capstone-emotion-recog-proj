@@ -18,32 +18,46 @@ class DataAgg:
 		self.video_capture = cv2.VideoCapture(0)
 		self.start_ml()
 		self.events = [] # list of tuples of times and pictures
+		self.alert_mode = False
 
 	def start_ml(self,):
 		DeepFace.analyze("assets/test_img.jpg", actions=["emotion"], detector_backend="ssd")
 
 	def run_ml_on_img(self, img):
 		try:
-			emo = DeepFace.analyze(img, actions=["emotion"], detector_backend="ssd") # img must be np array in BGR format
+			self.alert_mode = False
+			# use deepface analyze function to detect emotion
+			# returns list of dicts including emotion scores, detected face region, dominant emotion, and confidence of face detection
+			emo = DeepFace.analyze(img, actions=["emotion"], detector_backend="ssd")  # img must be np array in BGR format
 			emo = emo[np.argmax([e["face_confidence"] for e in emo])]
-			print(emo["emotion"])
+			print("---------------------- NEW ITERATION ----------------------")
+			print("raw emotion score distrib:", emo["emotion"])
 			emo = np.array([emo["emotion"][e] for e in [
 				"happy", "sad", "angry", "fear", "disgust", "surprise"
 			]])
+			print("----")
+
+			# get scores for emotion and sentiment
 			emo = (np.exp(emo/SENSITIVITY) - np.exp(-emo/SENSITIVITY))/(np.exp(emo/SENSITIVITY) + np.exp(-emo/SENSITIVITY))
-			print(emo)
 			# Add sentiment (happiness - sadness)
 			emo = np.insert(emo, 0, emo[0] - emo[1])
 			emo *= 3
+			print("emotion score distrib (excl. neutral):", emo)
+			print("sentiment score:", emo[0])
+			print("----")
+
+		# default values of zero
 		except ValueError:
 			emo = np.array([0, 0, 0, 0, 0, 0, 0])
 
-		print(emo)
+		# encode scores for emotion and sentiment (values between 0-3 emotion and -3-3 sentiment)
 		emo = np.round(emo).astype(int)
 		emo = np.minimum(emo, 3)
 		emo = np.maximum(emo, [-3, 0, 0, 0, 0, 0, 0])
-		print(emo)
-		self.emotion_mem.append(emo)
+		print("emotion values:", emo)
+		print("sentiment value:", emo[0])
+		print("----")
+		self.emotion_mem.append(emo)  # store emotion data
 
 		# This is perminent event detection stuff
 		if len(self.emotion_mem) > 60 and len(self.emotion_mem) % 15 == 0:
@@ -81,7 +95,37 @@ class DataAgg:
 				screenshot = pyautogui.screenshot().resize((512, 288))
 				screenshot = ImageTk.PhotoImage(image=screenshot)
 				self.events.append((len(self.emotion_mem) - 1, screenshot, emo, bad))
+				# console output
+				print("\nALERT: Significant change in emotion or sentiment! Event logged...")
+				print("Detected significant shift of: %s. Worsened: %s.\n" % (emo, bad))
 
+				# This begins the trigger of a notification when a new event is recorded
+				# if emo in ["Overall sentiment", "Sadness", "Anger", "Fear", "Disgust"]:
+				# 	self.alert_mode = True
+	
+				# right now, just testing the notification system works when events are detected in general
+				self.alert_mode = True
+
+	# for the main gui script to check whether an alert is triggered. returns appropriate boolean value
+	def alert(self,):
+		return self.alert_mode
+	
+	# retrieve message contents. will be tailored to specific emotion detected in last recorded event
+	def get_event_alert(self,):
+		if self.alert_mode and len(self.events) > 0:
+			last_event = self.events[-1]  # last event recorded
+			last_event_emo = last_event[2]
+			bad = last_event[3]
+			alert_msg = None
+
+			if (last_event_emo == "Sadness") or (last_event_emo == "Anger"):
+				alert_msg = "It appears you have been steadily expressing %s over the past 30 seconds. Maybe you'd benefit from taking a break?" % last_event_emo
+			elif last_event_emo == "Overall Sentiment":
+				alert_msg = "Your overall sentiment appears to have changed over the past 30 seconds. Is everything alright?"
+			else:
+				alert_msg = ""
+			
+			return alert_msg
 
 	def request_new_img(self,):
 		captured, frame = self.video_capture.read()
@@ -174,6 +218,9 @@ class DataAgg:
 		buf.close()
 		return img
 
+
+import os
+os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 
 if __name__ == "__main__":
 	da = DataAgg()

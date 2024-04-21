@@ -1,5 +1,5 @@
 from customtkinter import CTk, CTkFrame, CTkLabel, CTkButton
-from tkinter import NONE, BOTH, X, TOP, BOTTOM, LEFT, RIGHT, RAISED
+from tkinter import NONE, BOTH, X, TOP, BOTTOM, LEFT, RIGHT, RAISED, messagebox
 from data_agg import DataAgg
 
 # Start tkinter
@@ -55,6 +55,10 @@ def generate_window(live_mode=True, draw_event=0):
 	sentiment_text = CTkLabel(master=sent_frame)
 	sentiment_text.pack(side=LEFT, fill=X, padx=6, expand=False)
 
+	# # Undecided plan to add an in-application silent notification about detected events
+	# alerts = CTkFrame(master=root, height=24) # , relief=RAISED, borderwidth=1)
+	# alerts.pack(side=BOTTOM, padx=12, pady=6, fill=X, expand=False)
+
 	# Function to draw sentiment
 	def update_sent_text():
 		sent = data_agg.get_emotion(0)
@@ -66,7 +70,7 @@ def generate_window(live_mode=True, draw_event=0):
 
 		# Repeat
 		sentiment_text.after(1000, update_sent_text)
-
+		
 	if live_mode:
 		update_sent_text()
 	else:
@@ -119,6 +123,8 @@ def generate_window(live_mode=True, draw_event=0):
 			emo_label.text = txt
 			emo_label.configure(text=txt)
 
+	
+
 	# Add button
 	if live_mode:
 		button = CTkButton(
@@ -155,16 +161,23 @@ def generate_window(live_mode=True, draw_event=0):
 	# Method to draw new frames
 	def put_graph_into_frame():
 		img = data_agg.get_graph()
-
 		# Put image into frame
 		graph_placement.photo_image = img
 		graph_placement.configure(image=img)
 
 		# Repeat
 		graph_placement.after(1000, put_graph_into_frame)
+		
+	def display_event_alert():
+		is_alert = data_agg.alert()
+		if is_alert:
+			message = data_agg.get_event_alert()
+			messagebox.showinfo("Wellness Alert", message)
+
 
 	if live_mode:
 		put_graph_into_frame()
+		display_event_alert()
 	else:
 		img = data_agg.get_graph(live=False, cur_event=draw_event)
 
