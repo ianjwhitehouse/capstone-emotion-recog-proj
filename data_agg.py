@@ -70,7 +70,7 @@ class DataAgg:
 			# Capture event if any emotion goes up signficantly or sentiment goes down
 			emo = None
 			if np.abs(current_avg[0] - previous_avg[0]) > 3: # Sentiment changed
-				emo = "Overall sentiment"
+				emo = "Overall Sentiment"
 				bad = current_avg[0] < previous_avg[0]
 			elif np.abs(current_avg[1] - previous_avg[1]) > 1.5: # Happiness changed
 				emo = "Happiness"
@@ -127,6 +127,7 @@ class DataAgg:
 			
 			return alert_msg
 
+	# Request that the camera captures a new image
 	def request_new_img(self,):
 		captured, frame = self.video_capture.read()
 		if not captured:

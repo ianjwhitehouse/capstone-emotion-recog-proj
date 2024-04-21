@@ -167,12 +167,13 @@ def generate_window(live_mode=True, draw_event=0):
 
 		# Repeat
 		graph_placement.after(1000, put_graph_into_frame)
-		
+	
+	# Check for an handle message alerts
 	def display_event_alert():
 		is_alert = data_agg.alert()
 		if is_alert:
 			message = data_agg.get_event_alert()
-			messagebox.showinfo("Wellness Alert", message)
+			messagebox.showinfo("WorkMindfully Wellness Alert", message)
 
 
 	if live_mode:
