@@ -85,12 +85,11 @@ class DataAgg:
 				bad = current_avg[5] > previous_avg[5]
 
 			if emo:
-				screenshot = pyautogui.screenshot().resize((512, 288))
-				screenshot = ImageTk.PhotoImage(image=screenshot)
+				screenshot = pyautogui.screenshot()
 				self.events.append((len(self.emotion_mem) - 1, screenshot, emo, bad))
 
 
-	def request_new_img(self,):
+	def request_new_img(self, resize_width, resize_height):
 		captured, frame = self.video_capture.read()
 		if not captured:
 			frame = cv2.imread("assets/no_camera.png")
@@ -102,16 +101,16 @@ class DataAgg:
 		
 		img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-		img = Image.fromarray(img).resize((512, 288))
+		img = Image.fromarray(img).resize((resize_width, resize_height))
 		img = ImageTk.PhotoImage(image=img)
 
 		return img
 
-	def get_event_img(self, i):
+	def get_event_img(self, i, resize_width, resize_height):
 		if len(self.events) > i:
-			return self.events[i][1] # stuff stored in self.events must be already ImageTk
+			return ImageTk.PhotoImage(image=self.events[i][1]).resize((resize_width, resize_height))
 		else:
-			img = Image.fromarray(np.zeros((512, 288, 3)).astype(np.uint8)).resize((512, 288))
+			img = Image.fromarray(np.zeros((512, 288, 3)).astype(np.uint8)).resize((resize_width, resize_height))
 			return ImageTk.PhotoImage(image=img)
 
 	def get_event_text(self, i):
@@ -135,9 +134,9 @@ class DataAgg:
 		except IndexError:
 			return 0
 
-	def get_graph(self, live=True, cur_event=0):
+	def get_graph(self, resize_width, resize_height, live=True, cur_event=0):
 		plt.close()
-		fig, ax1 = plt.subplots(figsize=(7, 2.6))
+		fig, ax1 = plt.subplots(figsize=(8.4, 3))
 		fig.patch.set_facecolor("#EBEBEB")
 
 		if live:
@@ -180,9 +179,15 @@ class DataAgg:
 		buf = io.BytesIO()
 		fig.savefig(buf, format='png')
 		buf.seek(0)
-		img = Image.open(buf).resize((700, 260))
+		img = Image.open(buf).resize((resize_width, resize_height))
 		img = ImageTk.PhotoImage(image=img)
 		buf.close()
+		return img
+		
+	def gen_dummy_img(self,):
+		img = Image.fromarray(np.zeros((100, 100, 3)).astype(np.uint8))
+		img = ImageTk.PhotoImage(image=img)
+		
 		return img
 
 

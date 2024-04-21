@@ -29,25 +29,34 @@ def generate_window(live_mode=True, draw_event=0):
 	camera_placement = CTkLabel(master=camera_frame, width=512, height=288, text="")
 	camera_placement.pack(fill=NONE, expand=False)
 
+	# Update label to set correct sizes
+	camera_placement.update()
+
 	# Method to draw new frames
 	def put_image_into_frame():
-		img = data_agg.request_new_img()
+		# Get a new image from the camera
+		img = data_agg.request_new_img(camera_placement.winfo_width(), camera_placement.winfo_height())
 
 		# Put image into frame
+		# print("CAMERA", camera_placement.winfo_height(), camera_placement.winfo_width(), img.width(), img.height())
 		camera_placement.photo_image=img
 		camera_placement.configure(image=img)
+		camera_placement.update()
 
 		# Repeat
 		camera_placement.after(1000//data_agg.cam_updates_per_second, put_image_into_frame)
 
 	if live_mode:
 		put_image_into_frame()
+		
 	else:
-		img = data_agg.get_event_img(draw_event)
+		# Get a screenshot saved with the specific event
+		img = data_agg.get_event_img(draw_event, camera_placement.winfo_width(), camera_placement.winfo_height())
 
 		# Put image into frame
 		camera_placement.photo_image = img
 		camera_placement.configure(image=img)
+		camera_placement.update()
 
 	# Add current emotion frame
 	sent_frame = CTkFrame(master=root, height=24) # , relief=RAISED, borderwidth=1)
@@ -163,25 +172,33 @@ def generate_window(live_mode=True, draw_event=0):
 	graph_placement = CTkLabel(master=graph_frame, width=700, height=260, text="")
 	graph_placement.pack(fill=NONE, expand=False)
 
+	# Update label to set correct sizes
+	graph_placement.update()
+
 	# Method to draw new frames
 	def put_graph_into_frame():
-		img = data_agg.get_graph()
+		img = data_agg.get_graph(graph_placement.winfo_width(), graph_placement.winfo_height())
 
 		# Put image into frame
 		graph_placement.photo_image = img
 		graph_placement.configure(image=img)
+		graph_placement.update()
 
 		# Repeat
 		graph_placement.after(1000, put_graph_into_frame)
 
 	if live_mode:
 		put_graph_into_frame()
+		
 	else:
-		img = data_agg.get_graph(live=False, cur_event=draw_event)
+		print("GRAPH", graph_placement.winfo_width(), graph_placement.winfo_height())
+		img = data_agg.get_graph(graph_placement.winfo_width(), graph_placement.winfo_height(), live=False, cur_event=draw_event)
 
 		# Put image into frame
 		graph_placement.photo_image = img
 		graph_placement.configure(image=img)
+		graph_placement.update()
+	
 	print("done gening")
 
 
