@@ -142,27 +142,38 @@ def generate_window(live_mode=True, draw_event=0):
 	# Add button
 	if live_mode:
 		button = CTkButton(
-			master=sent_frame, text="Stop Recording", width=120, # relief=RAISED, borderwidth=1,
+			master=sent_frame, text="Stop Rec.", width=64, # relief=RAISED, borderwidth=1,
 			command=lambda : generate_window(live_mode=False, draw_event=0)
 		)
 		button.pack(side=RIGHT, padx=6, fill=NONE, expand=False)
 	else:
 		button = CTkButton(
-			master=sent_frame, text="Start Recording", width=120, # relief=RAISED, borderwidth=1,
+			master=sent_frame, text="Start Rec.", width=64, # relief=RAISED, borderwidth=1,
 			command=lambda: generate_window(live_mode=True)
 		)
 		button.pack(side=RIGHT, padx=6, fill=NONE, expand=False)
-
+			
+		button = CTkButton(
+			master=sent_frame, text="Load Rec.", width=64, # relief=RAISED, borderwidth=1,
+			command=None
+		)
+		button.pack(side=RIGHT, padx=6, fill=NONE, expand=False)
+		button = CTkButton(
+			master=sent_frame, text="Save Rec.", width=64, # relief=RAISED, borderwidth=1,
+			command=None
+		)
+		button.pack(side=RIGHT, padx=6, fill=NONE, expand=False)
+		
 		if len(data_agg.events) > 0:
 			button = CTkButton(
-				master=sent_frame, text="Prev. Event", width=36, # relief=RAISED, borderwidth=1,
-				command=lambda: generate_window(live_mode=False, draw_event=max(draw_event - 1, 0))
+				master=sent_frame, text="Next Event", width=64, # relief=RAISED, borderwidth=1,
+				command=lambda: generate_window(live_mode=False, draw_event=min(draw_event + 1, len(data_agg.events) - 1))
 			)
 			button.pack(side=RIGHT, padx=6, fill=NONE, expand=False)
-
+			
 			button = CTkButton(
-				master=sent_frame, text="Next Event", width=36, # relief=RAISED, borderwidth=1,
-				command=lambda: generate_window(live_mode=False, draw_event=min(draw_event + 1, len(data_agg.events) - 1))
+				master=sent_frame, text="Prev. Event", width=64, # relief=RAISED, borderwidth=1,
+				command=lambda: generate_window(live_mode=False, draw_event=max(draw_event - 1, 0))
 			)
 			button.pack(side=RIGHT, padx=6, fill=NONE, expand=False)
 

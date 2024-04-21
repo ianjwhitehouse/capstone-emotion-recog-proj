@@ -5,12 +5,13 @@ import numpy as np
 import io
 import pyautogui
 from deepface import DeepFace
+from time import time
 
 
 # Hardcoded settings
 SENSITIVITY = 10
-CAM_UPDATES_PER_SEC = 50
-MIN_FACE_CONFIDENCE = 0.3
+CAM_UPDATES_PER_SEC = 20
+MIN_FACE_CONFIDENCE = 0.25
 
 
 class DataAgg:
@@ -20,8 +21,8 @@ class DataAgg:
 		self.video_capture = cv2.VideoCapture(0)
 		self.start_ml()
 		self.events = []	# list of tuples of times and pictures
-		self.times_cam_called = 0
 		self.cam_updates_per_second = CAM_UPDATES_PER_SEC
+		self.last_photo_time = 0
 
 	def start_ml(self,):
 		DeepFace.analyze("assets/test_img.jpg", actions=["emotion"], detector_backend="ssd")
@@ -55,10 +56,10 @@ class DataAgg:
 		# This is perminent event detection stuff
 		if len(self.emotion_mem) > 60 and len(self.emotion_mem) % 15 == 0:
 			current_avg = np.stack([emos for emos in self.emotion_mem[-30:]])
-			current_avg = np.mean(current_avg, axis=0)
+			current_avg = np.mean(current_avg[~np.any(np.isnan(current_avg), axis=1)], axis=0)
 
 			previous_avg = np.stack([emos for emos in self.emotion_mem[-60:-30]])
-			previous_avg = np.mean(previous_avg, axis=0)
+			previous_avg = np.mean(previous_avg[~np.any(np.isnan(previous_avg), axis=1)], axis=0)
 
 			# Capture event if any emotion goes up signficantly or sentiment goes down
 			emo = None
@@ -94,10 +95,9 @@ class DataAgg:
 		if not captured:
 			frame = cv2.imread("assets/no_camera.png")
 
-		
-		if self.times_cam_called % self.cam_updates_per_second == 0:
+		if time() - self.last_photo_time >= 1:
+			self.last_photo_time = time()
 			self.run_ml_on_img(frame)
-		self.times_cam_called += 1
 		
 		img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
@@ -108,7 +108,7 @@ class DataAgg:
 
 	def get_event_img(self, i, resize_width, resize_height):
 		if len(self.events) > i:
-			return ImageTk.PhotoImage(image=self.events[i][1]).resize((resize_width, resize_height))
+			return ImageTk.PhotoImage(image=self.events[i][1].resize((resize_width, resize_height)))
 		else:
 			img = Image.fromarray(np.zeros((512, 288, 3)).astype(np.uint8)).resize((resize_width, resize_height))
 			return ImageTk.PhotoImage(image=img)
