@@ -5,10 +5,13 @@ import numpy as np
 import io
 import pyautogui
 from deepface import DeepFace
+from time import time
 
 
 # Hardcoded settings
-SENSITIVITY = 5
+SENSITIVITY = 10
+CAM_UPDATES_PER_SEC = 20
+MIN_FACE_CONFIDENCE = 0.25
 
 
 class DataAgg:
@@ -17,21 +20,24 @@ class DataAgg:
 		self.emotion_mem = []
 		self.video_capture = cv2.VideoCapture(0)
 		self.start_ml()
+
 		self.events = [] # list of tuples of times and pictures
 		self.alert_mode = False
+    self.cam_updates_per_second = CAM_UPDATES_PER_SEC
+		self.last_photo_time = 0
+ 
 
 	def start_ml(self,):
 		DeepFace.analyze("assets/test_img.jpg", actions=["emotion"], detector_backend="ssd")
 
 	def run_ml_on_img(self, img):
-		try:
-			self.alert_mode = False
-			# use deepface analyze function to detect emotion
-			# returns list of dicts including emotion scores, detected face region, dominant emotion, and confidence of face detection
-			emo = DeepFace.analyze(img, actions=["emotion"], detector_backend="ssd")  # img must be np array in BGR format
-			emo = emo[np.argmax([e["face_confidence"] for e in emo])]
-			print("---------------------- NEW ITERATION ----------------------")
+		emo = DeepFace.analyze(img, actions=["emotion"], detector_backend="ssd", enforce_detection=False) # img must be np array in BGR format
+		emo = emo[np.argmax([e["face_confidence"] for e in emo])]
+		
+		if emo["face_confidence"] > MIN_FACE_CONFIDENCE:
+		  print("---------------------- NEW ITERATION ----------------------")
 			print("raw emotion score distrib:", emo["emotion"])
+
 			emo = np.array([emo["emotion"][e] for e in [
 				"happy", "sad", "angry", "fear", "disgust", "surprise"
 			]])
@@ -39,33 +45,32 @@ class DataAgg:
 
 			# get scores for emotion and sentiment
 			emo = (np.exp(emo/SENSITIVITY) - np.exp(-emo/SENSITIVITY))/(np.exp(emo/SENSITIVITY) + np.exp(-emo/SENSITIVITY))
+			
 			# Add sentiment (happiness - sadness)
 			emo = np.insert(emo, 0, emo[0] - emo[1])
 			emo *= 3
-			print("emotion score distrib (excl. neutral):", emo)
-			print("sentiment score:", emo[0])
-			print("----")
 
-		# default values of zero
-		except ValueError:
-			emo = np.array([0, 0, 0, 0, 0, 0, 0])
+			# Define bounds of each emotion (values between 0-3 emotion and -3-3 sentiment)
+			emo = np.round(emo).astype(int)
+			emo = np.minimum(emo, 3)
+			emo = np.maximum(emo, [-3, 0, 0, 0, 0, 0, 0])
+			print("emotion values:", emo)
+		  print("sentiment value:", emo[0])
+		  print("----")
 
-		# encode scores for emotion and sentiment (values between 0-3 emotion and -3-3 sentiment)
-		emo = np.round(emo).astype(int)
-		emo = np.minimum(emo, 3)
-		emo = np.maximum(emo, [-3, 0, 0, 0, 0, 0, 0])
-		print("emotion values:", emo)
-		print("sentiment value:", emo[0])
-		print("----")
-		self.emotion_mem.append(emo)  # store emotion data
+		else:
+			emo = np.array([np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan])
+
+		self.emotion_mem.append(emo)
 
 		# This is perminent event detection stuff
+    self.alert_mode = False
 		if len(self.emotion_mem) > 60 and len(self.emotion_mem) % 15 == 0:
 			current_avg = np.stack([emos for emos in self.emotion_mem[-30:]])
-			current_avg = np.mean(current_avg, axis=0)
+			current_avg = np.mean(current_avg[~np.any(np.isnan(current_avg), axis=1)], axis=0)
 
 			previous_avg = np.stack([emos for emos in self.emotion_mem[-60:-30]])
-			previous_avg = np.mean(previous_avg, axis=0)
+			previous_avg = np.mean(previous_avg[~np.any(np.isnan(previous_avg), axis=1)], axis=0)
 
 			# Capture event if any emotion goes up signficantly or sentiment goes down
 			emo = None
@@ -92,9 +97,9 @@ class DataAgg:
 				bad = current_avg[5] > previous_avg[5]
 
 			if emo:
-				screenshot = pyautogui.screenshot().resize((512, 288))
-				screenshot = ImageTk.PhotoImage(image=screenshot)
+				screenshot = pyautogui.screenshot()
 				self.events.append((len(self.emotion_mem) - 1, screenshot, emo, bad))
+        
 				# console output
 				print("\nALERT: Significant change in emotion or sentiment! Event logged...")
 				print("Detected significant shift of: %s. Worsened: %s.\n" % (emo, bad))
@@ -123,24 +128,27 @@ class DataAgg:
 			return alert_msg
 
 	# Request that the camera captures a new image
-	def request_new_img(self,):
+	def request_new_img(self, resize_width, resize_height):
 		captured, frame = self.video_capture.read()
 		if not captured:
 			frame = cv2.imread("assets/no_camera.png")
 
-		self.run_ml_on_img(frame)
+		if time() - self.last_photo_time >= 1:
+			self.last_photo_time = time()
+			self.run_ml_on_img(frame)
+		
 		img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-		img = Image.fromarray(img).resize((512, 288))
+		img = Image.fromarray(img).resize((resize_width, resize_height))
 		img = ImageTk.PhotoImage(image=img)
 
 		return img
 
-	def get_event_img(self, i):
+	def get_event_img(self, i, resize_width, resize_height):
 		if len(self.events) > i:
-			return self.events[i][1] # stuff stored in self.events must be already ImageTk
+			return ImageTk.PhotoImage(image=self.events[i][1].resize((resize_width, resize_height)))
 		else:
-			img = Image.fromarray(np.zeros((512, 288, 3)).astype(np.uint8)).resize((512, 288))
+			img = Image.fromarray(np.zeros((512, 288, 3)).astype(np.uint8)).resize((resize_width, resize_height))
 			return ImageTk.PhotoImage(image=img)
 
 	def get_event_text(self, i):
@@ -164,9 +172,9 @@ class DataAgg:
 		except IndexError:
 			return 0
 
-	def get_graph(self, live=True, cur_event=0):
+	def get_graph(self, resize_width, resize_height, live=True, cur_event=0):
 		plt.close()
-		fig, ax1 = plt.subplots(figsize=(7, 2.6))
+		fig, ax1 = plt.subplots(figsize=(8.4, 3))
 		fig.patch.set_facecolor("#EBEBEB")
 
 		if live:
@@ -221,9 +229,15 @@ class DataAgg:
 		buf = io.BytesIO()
 		fig.savefig(buf, format='png')
 		buf.seek(0)
-		img = Image.open(buf).resize((700, 260))
+		img = Image.open(buf).resize((resize_width, resize_height))
 		img = ImageTk.PhotoImage(image=img)
 		buf.close()
+		return img
+		
+	def gen_dummy_img(self,):
+		img = Image.fromarray(np.zeros((100, 100, 3)).astype(np.uint8))
+		img = ImageTk.PhotoImage(image=img)
+		
 		return img
 
 
