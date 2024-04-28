@@ -20,9 +20,12 @@ class DataAgg:
 		self.emotion_mem = []
 		self.video_capture = cv2.VideoCapture(0)
 		self.start_ml()
-		self.events = []	# list of tuples of times and pictures
-		self.cam_updates_per_second = CAM_UPDATES_PER_SEC
+
+		self.events = [] # list of tuples of times and pictures
+		self.alert_mode = False
+    self.cam_updates_per_second = CAM_UPDATES_PER_SEC
 		self.last_photo_time = 0
+ 
 
 	def start_ml(self,):
 		DeepFace.analyze("assets/test_img.jpg", actions=["emotion"], detector_backend="ssd")
@@ -32,21 +35,28 @@ class DataAgg:
 		emo = emo[np.argmax([e["face_confidence"] for e in emo])]
 		
 		if emo["face_confidence"] > MIN_FACE_CONFIDENCE:
-			print(emo["emotion"])
+		  print("---------------------- NEW ITERATION ----------------------")
+			print("raw emotion score distrib:", emo["emotion"])
+
 			emo = np.array([emo["emotion"][e] for e in [
 				"happy", "sad", "angry", "fear", "disgust", "surprise"
 			]])
+			print("----")
+
+			# get scores for emotion and sentiment
 			emo = (np.exp(emo/SENSITIVITY) - np.exp(-emo/SENSITIVITY))/(np.exp(emo/SENSITIVITY) + np.exp(-emo/SENSITIVITY))
 			
 			# Add sentiment (happiness - sadness)
 			emo = np.insert(emo, 0, emo[0] - emo[1])
 			emo *= 3
 
-			# Define bounds of each emotion
+			# Define bounds of each emotion (values between 0-3 emotion and -3-3 sentiment)
 			emo = np.round(emo).astype(int)
 			emo = np.minimum(emo, 3)
 			emo = np.maximum(emo, [-3, 0, 0, 0, 0, 0, 0])
-			print(emo)
+			print("emotion values:", emo)
+		  print("sentiment value:", emo[0])
+		  print("----")
 
 		else:
 			emo = np.array([np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan])
@@ -54,6 +64,7 @@ class DataAgg:
 		self.emotion_mem.append(emo)
 
 		# This is perminent event detection stuff
+    self.alert_mode = False
 		if len(self.emotion_mem) > 60 and len(self.emotion_mem) % 15 == 0:
 			current_avg = np.stack([emos for emos in self.emotion_mem[-30:]])
 			current_avg = np.mean(current_avg[~np.any(np.isnan(current_avg), axis=1)], axis=0)
@@ -64,7 +75,7 @@ class DataAgg:
 			# Capture event if any emotion goes up signficantly or sentiment goes down
 			emo = None
 			if np.abs(current_avg[0] - previous_avg[0]) > 3: # Sentiment changed
-				emo = "Overall sentiment"
+				emo = "Overall Sentiment"
 				bad = current_avg[0] < previous_avg[0]
 			elif np.abs(current_avg[1] - previous_avg[1]) > 1.5: # Happiness changed
 				emo = "Happiness"
@@ -88,8 +99,35 @@ class DataAgg:
 			if emo:
 				screenshot = pyautogui.screenshot()
 				self.events.append((len(self.emotion_mem) - 1, screenshot, emo, bad))
+        
+				# console output
+				print("\nALERT: Significant change in emotion or sentiment! Event logged...")
+				print("Detected significant shift of: %s. Worsened: %s.\n" % (emo, bad))
 
+				# This begins the trigger of a notification when a new event is recorded
+				if emo in ["Overall sentiment", "Sadness", "Anger", "Fear", "Disgust"] and bad:
+					self.alert_mode = True
 
+	# for the main gui script to check whether an alert is triggered. returns appropriate boolean value
+	def alert(self,):
+		return self.alert_mode
+	
+	# retrieve message contents. will be tailored to specific emotion detected in last recorded event
+	def get_event_alert(self,):
+		if self.alert_mode and len(self.events) > 0:
+			last_event = self.events[-1]  # last event recorded
+			last_event_emo = last_event[2]
+			bad = last_event[3]
+			alert_msg = None
+
+			if last_event_emo == "Overall Sentiment":
+				alert_msg = "Your overall sentiment appears to have worsened over the past 30 seconds."
+			else:
+				alert_msg = "It appears you have been expressing worsening %s over the past 30 seconds." % last_event_emo
+			
+			return alert_msg
+
+	# Request that the camera captures a new image
 	def request_new_img(self, resize_width, resize_height):
 		captured, frame = self.video_capture.read()
 		if not captured:
@@ -157,8 +195,7 @@ class DataAgg:
 		# ax2.set_ylim(0, 3)
 		#
 		# for i in range(6):
-		# 	label = ["Happiness", "Sadness", "Anger", "Fear", "Disgust", "Suprise"][i]
-		# 	color = ["tab:green", "tab:olive", "tab:orange", "tab:purple", "tab:brown", "tab:pink"][i]
+		#
 		# 	if live:
 		# 		sent_data = np.convolve(np.array(self.emotion_mem)[-240:, i + 1], np.ones((10,)), mode="same")/10
 		# 		ax2.plot(0 - np.array(range(len(sent_data)))[::-1], sent_data, label=label, color=color)
@@ -173,6 +210,19 @@ class DataAgg:
 					ax1.vlines(event[0], -3, 3, color="tab:red", linewidth=5)
 				else:
 					ax1.vlines(event[0], -3, 3, color="black", linewidth=5)
+
+			if self.events[cur_event][2] != "Overall Sentiment":
+				ax2 = ax1.twinx()
+				ax2.set_ylim(0, 3)
+
+				i = {"Happiness": 0, "Sadness": 1, "Anger": 2, "Fear": 3, "Disgust": 4, "Suprise": 5}[self.events[cur_event][2]]
+
+				label = ["Happiness", "Sadness", "Anger", "Fear", "Disgust", "Suprise"][i]
+				color = ["tab:green", "tab:olive", "tab:orange", "tab:purple", "tab:brown", "tab:pink"][i]
+
+				sent_data = np.convolve(np.array(self.emotion_mem)[:, i + 1], np.ones((3,)), mode="valid")/3
+				ax2.plot(range(len(sent_data)), sent_data, label=label, color=color)
+				ax2.legend(loc="upper left")
 
 		plt.tight_layout()
 
