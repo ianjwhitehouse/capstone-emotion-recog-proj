@@ -182,19 +182,19 @@ class DataAgg:
 		ax1.set_yticks([-3, 0, 3], ["V. Poor", "Avg", "V. Good"], rotation="vertical", verticalalignment="center")
 		ax1.set_ylim(-3.2, 3.2)
 
-		ax2 = ax1.twinx()
-		ax2.set_ylabel("Individual Emotions", color="black")
-		ax2.set_ylim(0, 3)
-
-		for i in range(6):
-
-			if live:
-				sent_data = np.convolve(np.array(self.emotion_mem)[-240:, i + 1], np.ones((10,)), mode="same")/10
-				ax2.plot(0 - np.array(range(len(sent_data)))[::-1], sent_data, label=label, color=color)
-			else:
-				sent_data = np.convolve(np.array(self.emotion_mem)[:, i + 1], np.ones((10,)), mode="same")/10
-				ax2.plot(range(len(sent_data)), sent_data, label=label, color=color)
-		ax2.legend(loc="upper left")
+		# ax2 = ax1.twinx()
+		# ax2.set_ylabel("Individual Emotions", color="black")
+		# ax2.set_ylim(0, 3)
+		#
+		# for i in range(6):
+		#
+		# 	if live:
+		# 		sent_data = np.convolve(np.array(self.emotion_mem)[-240:, i + 1], np.ones((10,)), mode="same")/10
+		# 		ax2.plot(0 - np.array(range(len(sent_data)))[::-1], sent_data, label=label, color=color)
+		# 	else:
+		# 		sent_data = np.convolve(np.array(self.emotion_mem)[:, i + 1], np.ones((10,)), mode="same")/10
+		# 		ax2.plot(range(len(sent_data)), sent_data, label=label, color=color)
+		# ax2.legend(loc="upper left")
 
 		if not live and len(self.events) > 0:
 			for i, event in enumerate(self.events):
@@ -204,6 +204,9 @@ class DataAgg:
 					ax1.vlines(event[0], -3, 3, color="black", linewidth=5)
 
 			if self.events[cur_event][2] != "Overall Sentiment":
+				ax2 = ax1.twinx()
+				ax2.set_ylim(0, 3)
+
 				i = {"Happiness": 0, "Sadness": 1, "Anger": 2, "Fear": 3, "Disgust": 4, "Suprise": 5}[self.events[cur_event][2]]
 
 				label = ["Happiness", "Sadness", "Anger", "Fear", "Disgust", "Suprise"][i]
