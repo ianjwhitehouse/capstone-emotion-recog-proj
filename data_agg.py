@@ -99,14 +99,14 @@ class DataAgg:
 
 			if emo:
 				screenshot = pyautogui.screenshot()
-				self.events.append((len(self.emotion_mem) - 1, screenshot, emo, bad))
+				self.events.append((len(self.emotion_mem) - 1, screenshot, emo, bool(bad)))
         
 				# console output
 				print("\nALERT: Significant change in emotion or sentiment! Event logged...")
 				print("Detected significant shift of: %s. Worsened: %s.\n" % (emo, bad))
 
 				# This begins the trigger of a notification when a new event is recorded
-				if emo in ["Overall sentiment", "Sadness", "Anger", "Fear", "Disgust"] and bad:
+				if emo in ["Overall sentiment", "Happiness", "Sadness", "Anger"] and bad:
 					self.alert_mode = True
 
 	# for the main gui script to check whether an alert is triggered. returns appropriate boolean value
@@ -208,13 +208,14 @@ class DataAgg:
 		if not live and len(self.events) > 0:
 			for i, event in enumerate(self.events):
 				if i == cur_event:
-					ax1.vlines(event[0], -3, 3, color="tab:red", linewidth=5)
+					ax1.vlines(event[0], -3.2, 3.2, color="tab:red", linewidth=5)
 				else:
-					ax1.vlines(event[0], -3, 3, color="black", linewidth=5)
+					ax1.vlines(event[0], -3.2, 3.2, color="black", linewidth=5)
 
 			if self.events[cur_event][2] != "Overall Sentiment":
 				ax2 = ax1.twinx()
-				ax2.set_ylim(0, 3)
+				ax2.set_ylim(-0.1, 3.1)
+				ax2.set_yticks([0, 1, 2, 3], [0, 1, 2, 3], rotation="vertical", verticalalignment="center")
 
 				i = {"Happiness": 0, "Sadness": 1, "Anger": 2, "Fear": 3, "Disgust": 4, "Suprise": 5}[self.events[cur_event][2]]
 
