@@ -1,5 +1,6 @@
 from customtkinter import CTk, CTkFrame, CTkLabel, CTkButton
-from tkinter import NONE, BOTH, X, TOP, BOTTOM, LEFT, RIGHT, RAISED, messagebox
+from customtkinter.windows import CTkToplevel
+from tkinter import NONE, BOTH, X, TOP, BOTTOM, LEFT, RIGHT, RAISED
 from data_agg import DataAgg
 
 # Start tkinter
@@ -16,11 +17,22 @@ alignstr = '%dx%d+%d+%d' % (720, 640, (screenwidth - 720) / 2, (screenheight - 5
 root.geometry(alignstr)
 root.resizable(width=False, height=False)
 
+# Make app close properly
+def close():
+	root.destroy()
+	raise KeyboardInterrupt
+
+root.protocol("WM_DELETE_WINDOW", close)
+
+
+# Generate the view of the camera or event
 def generate_window(live_mode=True, draw_event=0):
 	print(draw_event)
 	print("window")
 	for widget in root.winfo_children():
-		widget.destroy()
+		if type(widget) != CTkToplevel:
+			print(widget, type(widget))
+			widget.destroy()
 
 	# Add camera frame
 	camera_frame = CTkFrame(master=root, width=514, height=290) # , relief=RAISED, borderwidth=1)
@@ -123,8 +135,6 @@ def generate_window(live_mode=True, draw_event=0):
 			emo_label.text = txt
 			emo_label.configure(text=txt)
 
-	
-
 	# Add button
 	if live_mode:
 		button = CTkButton(
@@ -171,9 +181,9 @@ def generate_window(live_mode=True, draw_event=0):
 	# Check for an handle message alerts
 	def display_event_alert():
 		is_alert = data_agg.alert()
-		if is_alert:
-			message = data_agg.get_event_alert()
-			messagebox.showinfo("WorkMindfully Wellness Alert", message)
+		if is_alert or True:
+			message = "Your overall sentiment appears to have worsened over the past 30 seconds." # data_agg.get_event_alert()
+			show_break_message(message)
 
 
 	if live_mode:
@@ -186,6 +196,70 @@ def generate_window(live_mode=True, draw_event=0):
 		graph_placement.photo_image = img
 		graph_placement.configure(image=img)
 	print("done gening")
+
+
+# Show a message (alternative to message box)
+# https://stackoverflow.com/a/15306785
+def show_break_message(event_str):
+	message_window = CTkToplevel(root)
+	message_window.title("WorkMindfully Focus Alert")
+	alignstr = '%dx%d+%d+%d' % (480, 120, (screenwidth - 480) / 2, (screenheight - 120) / 2)
+	message_window.geometry(alignstr)
+	message_window.resizable(width=False, height=False)
+
+	# Add labels
+	label_frame = CTkFrame(master=message_window)
+	label_frame.pack(side=TOP, padx=12, pady=6, fill=NONE, expand=False)
+	emotion_label = CTkLabel(master=label_frame, text="Would you like to pause recording for a five minute break?\n%s"%event_str)
+	emotion_label.pack(side=LEFT, padx=12, pady=6)
+
+	# Add buttons
+	button_frame = CTkFrame(master=message_window)
+
+	# Close window button
+	def end_break():
+		message_window.destroy()
+		generate_window(live_mode=True)
+
+	button_frame.pack(side=TOP, padx=12, pady=6, fill=NONE, expand=False)
+	close_button = CTkButton(
+		master=button_frame, text="Keep Working", width=120,
+		command=lambda: end_break()
+	)
+	close_button.pack(side=RIGHT, padx=6, fill=NONE, expand=False)
+
+	# Message control logic
+	def update_break_timer(time_remaining):
+		if time_remaining == 5 * 60:
+			start_break_button.destroy()
+			close_button.destroy()
+			generate_window(live_mode=False)
+
+			close_early_button.pack(side=RIGHT, padx=6, fill=NONE, expand=False)
+
+		# Put remaining time into emotion_label
+		emotion_label.text = "\nTime remaining: %d:%d" % (time_remaining // 60, time_remaining % 60)
+		emotion_label.configure(text="\nTime remaining: %d:%02.f" % (time_remaining // 60, time_remaining % 60))
+		emotion_label.update()
+
+		# Repeat
+		if time_remaining > 0:
+			emotion_label.after(1000, lambda: update_break_timer(time_remaining - 1))
+		else:
+			close_early_button.text = "Resume Work"
+			emotion_label.configure(text="Resume Work")
+
+	start_break_button = CTkButton(
+		master=button_frame, text="Take Break", width=120,
+		command=lambda: update_break_timer(5 * 60)
+	)
+	start_break_button.pack(side=RIGHT, padx=6, fill=NONE, expand=False)
+
+	close_early_button = CTkButton(
+		master=button_frame, text="End Break Early & Resume", width=120,
+		command=lambda: end_break()
+	)
+	message_window.protocol("WM_DELETE_WINDOW", end_break)
 
 
 # Run app

@@ -100,11 +100,8 @@ class DataAgg:
 				print("Detected significant shift of: %s. Worsened: %s.\n" % (emo, bad))
 
 				# This begins the trigger of a notification when a new event is recorded
-				# if emo in ["Overall sentiment", "Sadness", "Anger", "Fear", "Disgust"]:
-				# 	self.alert_mode = True
-	
-				# right now, just testing the notification system works when events are detected in general
-				self.alert_mode = True
+				if emo in ["Overall sentiment", "Sadness", "Anger", "Fear", "Disgust"] and bad:
+					self.alert_mode = True
 
 	# for the main gui script to check whether an alert is triggered. returns appropriate boolean value
 	def alert(self,):
@@ -118,12 +115,10 @@ class DataAgg:
 			bad = last_event[3]
 			alert_msg = None
 
-			if (last_event_emo == "Sadness") or (last_event_emo == "Anger"):
-				alert_msg = "It appears you have been steadily expressing %s over the past 30 seconds. Maybe you'd benefit from taking a break?" % last_event_emo
-			elif last_event_emo == "Overall Sentiment":
-				alert_msg = "Your overall sentiment appears to have changed over the past 30 seconds. Is everything alright?"
+			if last_event_emo == "Overall Sentiment":
+				alert_msg = "Your overall sentiment appears to have worsened over the past 30 seconds."
 			else:
-				alert_msg = ""
+				alert_msg = "It appears you have been expressing worsening %s over the past 30 seconds." % last_event_emo
 			
 			return alert_msg
 
@@ -187,20 +182,19 @@ class DataAgg:
 		ax1.set_yticks([-3, 0, 3], ["V. Poor", "Avg", "V. Good"], rotation="vertical", verticalalignment="center")
 		ax1.set_ylim(-3.2, 3.2)
 
-		# ax2 = ax1.twinx()
-		# ax2.set_ylabel("Individual Emotions", color="black")
-		# ax2.set_ylim(0, 3)
-		#
-		# for i in range(6):
-		# 	label = ["Happiness", "Sadness", "Anger", "Fear", "Disgust", "Suprise"][i]
-		# 	color = ["tab:green", "tab:olive", "tab:orange", "tab:purple", "tab:brown", "tab:pink"][i]
-		# 	if live:
-		# 		sent_data = np.convolve(np.array(self.emotion_mem)[-240:, i + 1], np.ones((10,)), mode="same")/10
-		# 		ax2.plot(0 - np.array(range(len(sent_data)))[::-1], sent_data, label=label, color=color)
-		# 	else:
-		# 		sent_data = np.convolve(np.array(self.emotion_mem)[:, i + 1], np.ones((10,)), mode="same")/10
-		# 		ax2.plot(range(len(sent_data)), sent_data, label=label, color=color)
-		# ax2.legend(loc="upper left")
+		ax2 = ax1.twinx()
+		ax2.set_ylabel("Individual Emotions", color="black")
+		ax2.set_ylim(0, 3)
+
+		for i in range(6):
+
+			if live:
+				sent_data = np.convolve(np.array(self.emotion_mem)[-240:, i + 1], np.ones((10,)), mode="same")/10
+				ax2.plot(0 - np.array(range(len(sent_data)))[::-1], sent_data, label=label, color=color)
+			else:
+				sent_data = np.convolve(np.array(self.emotion_mem)[:, i + 1], np.ones((10,)), mode="same")/10
+				ax2.plot(range(len(sent_data)), sent_data, label=label, color=color)
+		ax2.legend(loc="upper left")
 
 		if not live and len(self.events) > 0:
 			for i, event in enumerate(self.events):
@@ -208,6 +202,16 @@ class DataAgg:
 					ax1.vlines(event[0], -3, 3, color="tab:red", linewidth=5)
 				else:
 					ax1.vlines(event[0], -3, 3, color="black", linewidth=5)
+
+			if self.events[cur_event][2] != "Overall Sentiment":
+				i = {"Happiness": 0, "Sadness": 1, "Anger": 2, "Fear": 3, "Disgust": 4, "Suprise": 5}[self.events[cur_event][2]]
+
+				label = ["Happiness", "Sadness", "Anger", "Fear", "Disgust", "Suprise"][i]
+				color = ["tab:green", "tab:olive", "tab:orange", "tab:purple", "tab:brown", "tab:pink"][i]
+
+				sent_data = np.convolve(np.array(self.emotion_mem)[:, i + 1], np.ones((3,)), mode="valid")/3
+				ax2.plot(range(len(sent_data)), sent_data, label=label, color=color)
+				ax2.legend(loc="upper left")
 
 		plt.tight_layout()
 
@@ -219,9 +223,6 @@ class DataAgg:
 		buf.close()
 		return img
 
-
-import os
-os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 
 if __name__ == "__main__":
 	da = DataAgg()
