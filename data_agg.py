@@ -6,6 +6,7 @@ import io
 import pyautogui
 from deepface import DeepFace
 from time import time
+from json import dumps, loads
 
 
 # Hardcoded settings
@@ -233,7 +234,40 @@ class DataAgg:
 		img = ImageTk.PhotoImage(image=img)
 		buf.close()
 		return img
-		
+
+	def save(self, filename):
+		events = [{
+			"time": t,
+			"screenshot": np.array(screenshot).tolist(),
+			"emo": emo,
+			"bad": bad
+		} for t, screenshot, emo, bad in self.events]
+
+		emotion_mem = [np.nan_to_num(emos, nan=-1).tolist() for emos in self.emotion_mem]
+
+		if not filename.endswith(".wm"):
+			filename += ".wm"
+
+		with open(filename, "w") as f:
+			f.write(dumps({"events": events, "emotions": emotion_mem}))
+
+	def load(self, filename):
+		with open(filename, "r") as f:
+			json = loads(f.read())
+
+		events = json["events"]
+		self.events = [(
+			event["time"],
+			Image.fromarray(np.array(event["screenshot"])),
+			event["emo"],
+			event["bad"]
+		) for event in events]
+
+		emotions = np.array(json["emotions"])
+		emotions[emotions == -1] = np.nan
+		emotions = emotions.tolist()
+		self.emotions = emotions
+
 	def gen_dummy_img(self,):
 		img = Image.fromarray(np.zeros((100, 100, 3)).astype(np.uint8))
 		img = ImageTk.PhotoImage(image=img)
