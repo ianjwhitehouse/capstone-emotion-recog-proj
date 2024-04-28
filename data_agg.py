@@ -23,7 +23,7 @@ class DataAgg:
 
 		self.events = [] # list of tuples of times and pictures
 		self.alert_mode = False
-    self.cam_updates_per_second = CAM_UPDATES_PER_SEC
+		self.cam_updates_per_second = CAM_UPDATES_PER_SEC
 		self.last_photo_time = 0
  
 
@@ -35,7 +35,7 @@ class DataAgg:
 		emo = emo[np.argmax([e["face_confidence"] for e in emo])]
 		
 		if emo["face_confidence"] > MIN_FACE_CONFIDENCE:
-		  print("---------------------- NEW ITERATION ----------------------")
+			print("---------------------- NEW ITERATION ----------------------")
 			print("raw emotion score distrib:", emo["emotion"])
 
 			emo = np.array([emo["emotion"][e] for e in [
@@ -55,8 +55,8 @@ class DataAgg:
 			emo = np.minimum(emo, 3)
 			emo = np.maximum(emo, [-3, 0, 0, 0, 0, 0, 0])
 			print("emotion values:", emo)
-		  print("sentiment value:", emo[0])
-		  print("----")
+			print("sentiment value:", emo[0])
+			print("----")
 
 		else:
 			emo = np.array([np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan])
@@ -64,7 +64,7 @@ class DataAgg:
 		self.emotion_mem.append(emo)
 
 		# This is perminent event detection stuff
-    self.alert_mode = False
+		self.alert_mode = False
 		if len(self.emotion_mem) > 60 and len(self.emotion_mem) % 15 == 0:
 			current_avg = np.stack([emos for emos in self.emotion_mem[-30:]])
 			current_avg = np.mean(current_avg[~np.any(np.isnan(current_avg), axis=1)], axis=0)

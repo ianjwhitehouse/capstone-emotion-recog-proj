@@ -217,8 +217,8 @@ def generate_window(live_mode=True, draw_event=0):
 	# Check for an handle message alerts
 	def display_event_alert():
 		is_alert = data_agg.alert()
-		if is_alert or True:
-			message = "Your overall sentiment appears to have worsened over the past 30 seconds." # data_agg.get_event_alert()
+		if is_alert:
+			message = data_agg.get_event_alert()
 			show_break_message(message)
 
 
@@ -250,7 +250,7 @@ def show_break_message(event_str):
 	# Add labels
 	label_frame = CTkFrame(master=message_window)
 	label_frame.pack(side=TOP, padx=12, pady=6, fill=NONE, expand=False)
-	emotion_label = CTkLabel(master=label_frame, text="Would you like to pause recording for a five minute break?\n%s"%event_str)
+	emotion_label = CTkLabel(master=label_frame, text="Would you like to pause recording for a five minute break?\n%s\n"%event_str)
 	emotion_label.pack(side=LEFT, padx=12, pady=6)
 
 	# Add buttons
@@ -278,8 +278,8 @@ def show_break_message(event_str):
 			close_early_button.pack(side=RIGHT, padx=6, fill=NONE, expand=False)
 
 		# Put remaining time into emotion_label
-		emotion_label.text = "\nTime remaining: %d:%d" % (time_remaining // 60, time_remaining % 60)
-		emotion_label.configure(text="\nTime remaining: %d:%02.f" % (time_remaining // 60, time_remaining % 60))
+		emotion_label.text = "\nTime remaining: %d:%d\n" % (time_remaining // 60, time_remaining % 60)
+		emotion_label.configure(text="\nTime remaining: %d:%02.f\n" % (time_remaining // 60, time_remaining % 60))
 		emotion_label.update()
 
 		# Repeat
