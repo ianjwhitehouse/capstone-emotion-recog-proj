@@ -1,0 +1,40 @@
+name: Use PyInstaller to Build Exe File and Send to GitHub Release
+
+on: [pull_request]
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    strategy:
+      max-parallel: 1
+
+    steps:
+    - uses: actions/checkout@v3
+    - uses: conda-incubator/setup-miniconda@v3
+      with:
+        activate-environment: emo-cap
+        environment-file: environment.yml
+        auto-activate-base: false
+    - name: Build with PyInstaller
+      run: |
+        pyinstaller --onefile --noconsole -n WorkMindfully.exe gui-app.py
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        body: github.event.release.body
+        draft: true
+    - name: Upload Release Asset
+      id: upload-release-asset 
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
+        asset_path: ./dist/WorkMindfully.exe
+        asset_name: WorkMindfully.exe
+        asset_content_type: application/exe
