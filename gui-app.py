@@ -1,5 +1,6 @@
 from customtkinter import CTk, CTkFrame, CTkLabel, CTkButton
 from customtkinter.windows import CTkToplevel
+from customtkinter import filedialog
 from tkinter import NONE, BOTH, X, TOP, BOTTOM, LEFT, RIGHT, RAISED
 import numpy as np
 from data_agg import DataAgg
@@ -171,12 +172,12 @@ def generate_window(live_mode=True, draw_event=0):
 			
 		button = CTkButton(
 			master=sent_frame, text="Load Rec.", width=64, # relief=RAISED, borderwidth=1,
-			command=None
+			command=lambda: data_agg.load(filedialog.askopenfilename(filetypes=[("WorkMindfully Recording", "wm")]))
 		)
 		button.pack(side=RIGHT, padx=6, fill=NONE, expand=False)
 		button = CTkButton(
 			master=sent_frame, text="Save Rec.", width=64, # relief=RAISED, borderwidth=1,
-			command=None
+			command=save_dialogue
 		)
 		button.pack(side=RIGHT, padx=6, fill=NONE, expand=False)
 		
@@ -250,7 +251,10 @@ def show_break_message(event_str):
 	# Add labels
 	label_frame = CTkFrame(master=message_window)
 	label_frame.pack(side=TOP, padx=12, pady=6, fill=NONE, expand=False)
-	emotion_label = CTkLabel(master=label_frame, text="Would you like to pause recording for a five minute break?\n%s\n"%event_str)
+	emotion_label = CTkLabel(
+		master=label_frame,
+		text="Would you like to pause recording for a five minute break?\n%s\n" % event_str
+	)
 	emotion_label.pack(side=LEFT, padx=12, pady=6)
 
 	# Add buttons
@@ -300,6 +304,50 @@ def show_break_message(event_str):
 		command=lambda: end_break()
 	)
 	message_window.protocol("WM_DELETE_WINDOW", end_break)
+
+
+# Save safety dialoge
+def save_dialogue():
+	message_window = CTkToplevel(root)
+	message_window.title("WorkMindfully Save Reminder")
+	alignstr = '%dx%d+%d+%d' % (480, 120, (screenwidth - 480) / 2, (screenheight - 120) / 2)
+	message_window.geometry(alignstr)
+	message_window.resizable(width=False, height=False)
+
+	# Add labels
+	label_frame = CTkFrame(master=message_window)
+	label_frame.pack(side=TOP, padx=12, pady=6, fill=NONE, expand=False)
+	emotion_label = CTkLabel(
+		master=label_frame,
+		text="Saving the analysis of your emotions includes sensitive\nemotional data and screenshots of your work.  Only share\nthese files with authorized individuals"
+	)
+	emotion_label.pack(side=LEFT, padx=12, pady=6)
+
+	# Add buttons
+	button_frame = CTkFrame(master=message_window)
+
+	# Close window button
+	def close():
+		message_window.destroy()
+		generate_window(live_mode=False)
+
+	button_frame.pack(side=TOP, padx=12, pady=6, fill=NONE, expand=False)
+	close_button = CTkButton(
+		master=button_frame, text="Cancel", width=120,
+		command=lambda: close()
+	)
+	close_button.pack(side=RIGHT, padx=6, fill=NONE, expand=False)
+	message_window.protocol("WM_DELETE_WINDOW", close)
+
+	def save():
+		close()
+		data_agg.save(filedialog.asksaveasfilename(defaultextension="wm", filetypes=[("WorkMindfully Recording", "wm")]))
+
+	save_button = CTkButton(
+		master=button_frame, text="I Understand", width=120,
+		command=lambda: save()
+	)
+	save_button.pack(side=RIGHT, padx=6, fill=NONE, expand=False)
 
 
 # Run app
