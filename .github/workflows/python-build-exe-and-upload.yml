@@ -17,7 +17,9 @@ jobs:
         auto-activate-base: false
     - name: Build with PyInstaller
       run: |
-        pyinstaller --onefile --noconsole -n WorkMindfully.exe gui-app.py
+        python -c "import cv2;import os;print(os.path.join(os.path.dirname(cv2.__file__), 'data', '*'))" > cv.txt
+        set /p cv= < cv.txt
+        pyinstaller --onefile --noconsole -n WorkMindfully.exe gui-app.py --add-data=%cv%:cv2/data/
     - name: Create Release
       id: create_release
       uses: actions/create-release@v1
