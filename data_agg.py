@@ -1,5 +1,5 @@
 import cv2
-from PIL import Image, ImageTk
+from PIL import Image, ImageTk, ImageFont, ImageDraw
 import matplotlib.pyplot as plt
 import numpy as np
 import io
@@ -29,7 +29,11 @@ class DataAgg:
  
 
 	def start_ml(self,):
-		DeepFace.analyze("assets/test_img.jpg", actions=["emotion"], detector_backend="ssd")
+		DeepFace.analyze(
+			np.zeros((1920, 1080, 3)).astype(np.uint8), actions=["emotion"],
+			detector_backend="ssd",
+			enforce_detection=False
+		)
 
 	def run_ml_on_img(self, img):
 		emo = DeepFace.analyze(img, actions=["emotion"], detector_backend="ssd", enforce_detection=False) # img must be np array in BGR format
@@ -132,7 +136,10 @@ class DataAgg:
 	def request_new_img(self, resize_width, resize_height):
 		captured, frame = self.video_capture.read()
 		if not captured:
-			frame = cv2.imread("assets/no_camera.png")
+			frame = Image.fromarray(np.zeros((640, 360, 3)).astype(np.uint8))
+			d1 = ImageDraw.Draw(frame)
+			d1.text((640//2, 360//2), "NO CAMERA", fill=(255, 0, 0), font=ImageFont.load_default(size=24))
+			frame = np.array(frame)
 
 		if time() - self.last_photo_time >= 1:
 			self.last_photo_time = time()
